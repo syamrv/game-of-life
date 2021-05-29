@@ -1,9 +1,10 @@
 currentBuild.displayName = "Final_Demo # "+currentBuild.number
-node('master'){
-		def getDockerTag(){
+def getDockerTag(){
 			def tag = sh returnStdout: true, script: 'git rev-parse HEAD'
 			return tag
 		}
+node('master'){
+		
 		
 		environment{
 	    Docker_tag = getDockerTag()
