@@ -1,15 +1,14 @@
 currentBuild.displayName = "Final_Demo # "+currentBuild.number
-def getDockerTag(){
+node('master'){
+		def getDockerTag(){
 			def tag = sh returnStdout: true, script: 'git rev-parse HEAD'
 			return tag
 		}
-
-
-node('master'){
-
-       environment{
+		
+		environment{
 	    Docker_tag = getDockerTag()
         }
+		
 		stage('ansible playbook'){
 			
 			 	script{
