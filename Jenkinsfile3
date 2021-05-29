@@ -3,12 +3,14 @@ def commit(){
         def tag = sh script: 'git rev-parse HEAD', returnStdout: true
 		return tag
 	}
+	sh 'echo $Docker_tag'
+
 node('master'){
 	
 	environment{
 		Docker_tag = commit()
 		}
-
+sh 'echo $Docker_tag'
 		stage('ansible playbook'){
 			sh 'echo ${Docker_tag}'
 			 	script{
