@@ -1,12 +1,10 @@
 currentBuild.displayName = "Final_Demo # "+currentBuild.number
-    String getCommit() {
-    return sh(script: 'git rev-parse HEAD', returnStdout: true)
-}
+
 
 node('master'){
-        env.Docker_tag = gitTagName()
+       
 
-
+def Docker_tag = sh(returnStdout: true, script: 'git rev-parse HEAD')
 
 		
 		stage('ansible playbook'){
