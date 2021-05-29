@@ -1,0 +1,43 @@
+currentBuild.displayName = "Final_Demo # "+currentBuild.number
+
+        
+
+pipeline{
+        agent any 
+	def myMavenContainer = docker.image('cloudbees/java-build-tools:0.0.6')
+    myMavenContainer.pull()
+	
+	def getDockerTag() {
+		def tag = sh returnStdout: true, script: 'git rev-parse HEAD'
+		return tag
+	}
+ 
+	environment{
+	Docker_tag = getDockerTag()
+	}
+	  
+    stage('maven build') {
+      myMavenContainer.inside() {
+        sh 'mvn clean package'
+		}		
+    }
+	 stage('Dokcer Build'){
+	
+			sh 'cp /var/lib/jenkins/workspace/${JOB_NAME}/gameoflife-web/target/gameoflife.war .'
+		    sh 'docker build . -t syamdocker/task:${Docker_tag}'
+		    withCredentials([string(credentialsId: 'docker_password', variable: 'docker_password')]) {
+				sh 'docker login -u syamdocker -p $docker_password'
+				sh 'docker push syamdocker/task:$Docker_tag'
+				}
+			}
+			
+	stage('ansible playbook'){
+		
+			 	script{
+				    sh '''final_tag=$(echo $Docker_tag | tr -d ' ')
+				     echo ${final_tag}test'''
+				   
+				}
+	
+		}
+}
