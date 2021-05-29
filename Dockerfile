@@ -1,5 +1,3 @@
-FROM tomcat 
-WORKDIR webapps 
-COPY gameoflife.war .
-RUN rm -rf ROOT && mv gameoflife.war ROOT.war
+FROM tomcat
+ADD gameoflife.war /usr/local/tomcat/webapps/
 ENTRYPOINT ["sh", "/usr/local/tomcat/bin/startup.sh"]
