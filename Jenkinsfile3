@@ -1,10 +1,11 @@
 currentBuild.displayName = "Final_Demo # "+currentBuild.number
-
-
 node('master'){
-	def commit = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+	def tag(){
+		def commit = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+		return commit
+	}
 	environment{
-		Docker_tag = commit()
+		Docker_tag = tag()
 		}
 
 		stage('ansible playbook'){
