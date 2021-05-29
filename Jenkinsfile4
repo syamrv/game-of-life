@@ -1,43 +1,27 @@
-currentBuild.displayName = "Final_Demo # "+currentBuild.number
-
-        
-
-pipeline{
-        agent any 
-	def myMavenContainer = docker.image('cloudbees/java-build-tools:0.0.6')
+node('master') {
+    def myMavenContainer = docker.image('cloudbees/java-build-tools:0.0.6')
     myMavenContainer.pull()
-	
-	def getDockerTag() {
-		def tag = sh returnStdout: true, script: 'git rev-parse HEAD'
-		return tag
-	}
- 
-	environment{
-	Docker_tag = getDockerTag()
-	}
-	  
+
     stage('maven build') {
       myMavenContainer.inside() {
         sh 'mvn clean package'
 		}		
     }
-	 stage('Dokcer Build'){
+	 stage('build'){
 	
 			sh 'cp /var/lib/jenkins/workspace/${JOB_NAME}/gameoflife-web/target/gameoflife.war .'
-		    sh 'docker build . -t syamdocker/task:${Docker_tag}'
+		    sh 'docker build . -t syamdocker/task:${BUILD_NUMBER}'
 		    withCredentials([string(credentialsId: 'docker_password', variable: 'docker_password')]) {
 				sh 'docker login -u syamdocker -p $docker_password'
-				sh 'docker push syamdocker/task:$Docker_tag'
+				sh 'docker push syamdocker/task:$BUILD_NUMBER'
 				}
 			}
-			
-	stage('ansible playbook'){
-		
-			 	script{
-				    sh '''final_tag=$(echo $Docker_tag | tr -d ' ')
-				     echo ${final_tag}test'''
-				   
-				}
-	
+	stage('Deployment using Ansible on Kubernetes'){
+		script{
+			sh '''
+			sed -i "s/build_number/$BUILD_NUMBER/g"  deployment.yaml
+			'''
+			//ansiblePlaybook become: true, installation: 'ansible', inventory: 'hosts', playbook: 'ansible.yaml'
+			}
 		}
 }
