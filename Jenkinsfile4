@@ -8,8 +8,11 @@ node('master') {
 		}		
     }
 	 stage('build'){
-	
+			sh 'ls -ltr /var/lib/jenkins/workspace/${JOB_NAME}/gameoflife-web/target/gameoflife.war'
+			sh 'pwd'
 			sh 'cp /var/lib/jenkins/workspace/${JOB_NAME}/gameoflife-web/target/gameoflife.war .'
+			sh 'ls'
+			sh 'cat Dockerfile'
 		    sh 'docker build . -t syamdocker/task:${BUILD_NUMBER}'
 		    withCredentials([string(credentialsId: 'docker_password', variable: 'docker_password')]) {
 				sh 'docker login -u syamdocker -p $docker_password'
