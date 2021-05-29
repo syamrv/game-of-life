@@ -5,8 +5,12 @@ node('master'){
        
 
 //def Docker_tag = sh(returnStdout: true, script: 'git rev-parse HEAD')
-            Docker_tag = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
-
+            
+steps {
+        script {
+        Docker_tag = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+        }
+    }
 		
 		stage('ansible playbook'){
 			sh 'echo ${Docker_tag}'
