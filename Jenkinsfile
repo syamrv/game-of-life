@@ -1,12 +1,22 @@
+	def git_branch;
+	def sonar_creds;
+	def sonar_user;
+	def sonar_url;
 node('master') {
 	// Defined the maven docker image for maven build.
-	
+		 git_branch = "master"
+		 sonar_creds = "admin01"
+		 sonar_user = "admin"
+		 sonar_url = "http://18.207.229.107/:9000/"
+		//def git_url="https://github.com/syamv/game-of-life.git"
+
     def myMavenContainer = docker.image('cloudbees/java-build-tools:0.0.6')
+	
     myMavenContainer.pull()
 	
     stage('checkout scm') {
         checkout([$class: 'GitSCM', 
-		branches: [[name: '*/master']], 
+		branches: [[name: "*/${git_branch}"]], 
 		doGenerateSubmoduleConfigurations: false, 
 		extensions: [[$class: 'CleanCheckout']], 
 		submoduleCfg: [], 
@@ -19,10 +29,10 @@ node('master') {
 			sh 'mvn clean verify package'
 		}		
     }
-	
 	stage('Junit Testing') {
-		junit allowEmptyResults: true, skipPublishingChecks: true, testDataPublishers: [[$class: 'AttachmentPublisher']], testResults: '**/target/surefire-reports/TEST-*.xml'
+		junit allowEmptyResults: true, skipPublishingChecks: true, testResults: '**/target/surefire-reports/TEST-*.xml'
 		perfReport filterRegex: '', showTrendGraphs: true, sourceDataFiles: '**/target/surefire-reports/TEST-*.xml'
+		archiveArtifacts artifacts: '**/target/*.war', followSymlinks: false
 	}
 	
 	stage('Jacoco reports') {
@@ -41,16 +51,19 @@ node('master') {
 			-D sonar.projectKey=gameoflife \
 			-D sonar.projectName=gameoflife \
 			-D sonar.projectVersion=1.0 \
-			-D sonar.sources=gameoflife-web/src/,gameoflife-core/src/,gameoflife-build/src/ \
-			-D sonar.java.binaries=gameoflife-web/target/,gameoflife-core/target,gameoflife-build/target/ \
+			-D sonar.sources=./gameoflife-web/src/,./gameoflife-core/src/,./gameoflife-build/src/ \
+			-D sonar.java.binaries=./gameoflife-web/target/,./gameoflife-core/target,./gameoflife-build/target/ \
 			-D sonar.language=java \
 			-D sonar.dynamicAnalysis=reuseReports \
-			-D sonar.junit.reportsPath=gameoflife-core/target/surefire-reports/,gameoflife-web/target/surefire-reports/ -D sonar.java.coveragePlugin=jacoco \
+			-D sonar.junit.reportsPath=gameoflife-core/target/surefire-reports/,gameoflife-web/target/surefire-reports/ \
+			-D sonar.java.coveragePlugin=jacoco \
 			-D sonar.jacoco.reportPath=gameoflife-core/target/jacoco.exec,gameoflife-web/target/jacoco.exec \
+			-D sonar.test=gameoflife-core/src/main/test,gameoflife-web/src/test/java/ \
+			-D sonar.junit.reportsPath=/var/lib/jenkins/workspace/test/gameoflife-core/target/surefire-reports/TEST-*.xml,/var/lib/jenkins/workspace/test/gameoflife-web/target/surefire-reports/TEST-*.xml \
+			-D sonar.coverage.jacoco.xmlReportPaths=/var/lib/jenkins/workspace/test/gameoflife-core/target/site/jacoco/jacoco.xml,/var/lib/jenkins/workspace/test/gameoflife-web/target/site/jacoco/jacoco.xml,build/reports/jacoco/test/jacocoTestReport.xml \
 			-D sonar.host.url=http://18.207.229.107:9000/"  \
 		}
 	}
-	
 	
 	// docker image creation to push to docker hub 
 	stage('Docker build'){
@@ -68,7 +81,7 @@ node('master') {
 			sh '''
 			sed -i "s/build_number/$BUILD_NUMBER/g" deployment.yaml
 			'''
-			//ansiblePlaybook become: true, installation: 'ansible', inventory: 'hosts', playbook: 'ansible.yaml'
+			ansiblePlaybook become: true, installation: 'ansible', inventory: 'hosts', playbook: 'ansible.yaml'
 		}
 	} 	
 	
@@ -76,7 +89,6 @@ node('master') {
         script {
             def userInput = input(id: 'Proceed1', message: 'Promote build?', parameters: [[$class: 'BooleanParameterDefinition', defaultValue: true, description: '', name: 'Please confirm you agree with this']])
             echo 'userInput: ' + userInput
-
             if(userInput == true) {
 				sh 'echo "Promote to UAT"'
             } else {
@@ -87,3 +99,4 @@ node('master') {
 	}
 	
 }
+
