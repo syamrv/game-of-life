@@ -47,12 +47,13 @@ node('master') {
 			-D sonar.dynamicAnalysis=reuseReports \
 			-D sonar.junit.reportsPath=gameoflife-core/target/surefire-reports/,gameoflife-web/target/surefire-reports/ -D sonar.java.coveragePlugin=jacoco \
 			-D sonar.jacoco.reportPath=gameoflife-core/target/jacoco.exec,gameoflife-web/target/jacoco.exec \
-			-D sonar.host.url=http://54.91.144.1:9000/"  \
+			-D sonar.host.url=http://18.207.229.107:9000/"  \
 		}
 	}
 	
+	
 	// docker image creation to push to docker hub 
-	stage('build'){
+	stage('Docker build'){
 		sh 'cp /var/lib/jenkins/workspace/${JOB_NAME}/gameoflife-web/target/gameoflife.war .'
 		sh 'docker build . -t syamdocker/task:${BUILD_NUMBER}'
 		withCredentials([string(credentialsId: 'docker_password', variable: 'docker_password')]) {
@@ -62,14 +63,27 @@ node('master') {
 	}
 	
 	//deployment of dokcer image to Kubernetes using the Ansible playbook.
-	stage('Deployment using Ansible on Kubernetes'){
+	stage('Deployment to Dev'){
 		script{
 			sh '''
 			sed -i "s/build_number/$BUILD_NUMBER/g" deployment.yaml
 			'''
-			ansiblePlaybook become: true, installation: 'ansible', inventory: 'hosts', playbook: 'ansible.yaml'
+			//ansiblePlaybook become: true, installation: 'ansible', inventory: 'hosts', playbook: 'ansible.yaml'
 		}
+	} 	
+	
+	stage("Promote to UAT") {
+        script {
+            def userInput = input(id: 'Proceed1', message: 'Promote build?', parameters: [[$class: 'BooleanParameterDefinition', defaultValue: true, description: '', name: 'Please confirm you agree with this']])
+            echo 'userInput: ' + userInput
+
+            if(userInput == true) {
+				sh 'echo "Promote to UAT"'
+            } else {
+                // not do action
+                echo "Action was aborted."
+            }
+       }  
 	}
+	
 }
-  // clean the workspace
-  cleanWs()
