@@ -30,4 +30,6 @@ This job is to promote to higher environments
 
 
 Once the deployment is completed use the below address to use the application of game-of-life.
-**Test the app using the http://<ip>:<nodePort>**
+
+Test the app using the http://<ip>:<nodePort>
+	
